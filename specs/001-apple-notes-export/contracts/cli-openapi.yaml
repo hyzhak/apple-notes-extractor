@@ -1,0 +1,88 @@
+openapi: 3.1.0
+info:
+  title: Apple Notes Export CLI Contract
+  version: 0.1.0
+paths:
+  /export:
+    post:
+      summary: Export Apple Notes to local filesystem
+      description: Mirrors Apple Notes folders to `notes/`, `artifacts/`, and `index.json` in a target directory with deterministic ordering.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - targetDir
+              properties:
+                targetDir:
+                  type: string
+                  description: Absolute path to an empty or force-allowed target directory.
+                includeFolders:
+                  type: array
+                  items:
+                    type: string
+                  description: Folder path prefixes to include.
+                excludeFolders:
+                  type: array
+                  items:
+                    type: string
+                  description: Folder path prefixes to exclude.
+                createdAfter:
+                  type: string
+                  format: date-time
+                createdBefore:
+                  type: string
+                  format: date-time
+                modifiedAfter:
+                  type: string
+                  format: date-time
+                modifiedBefore:
+                  type: string
+                  format: date-time
+                includeAttachments:
+                  type: boolean
+                  default: true
+                  description: When false, skip exporting attachments and write empty arrays in index records.
+                force:
+                  type: boolean
+                  default: false
+                  description: Allow overwriting colliding files but never delete unrelated files.
+      responses:
+        "200":
+          description: Export completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  indexPath:
+                    type: string
+                    description: Path to generated index.json.
+                  notesPath:
+                    type: string
+                    description: Path to exported notes root.
+                  artifactsPath:
+                    type: string
+                    description: Path to exported artifacts root.
+                  counts:
+                    type: object
+                    properties:
+                      notesExported:
+                        type: integer
+                      attachmentsExported:
+                        type: integer
+                      notesSkipped:
+                        type: integer
+                      attachmentsSkipped:
+                        type: integer
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    description: Non-fatal issues (e.g., permission denials, unsupported attachments).
+        "400":
+          description: Invalid input or target directory precondition failed.
+        "500":
+          description: Export failed due to unexpected error; must include note identifiers when applicable without leaking content.
