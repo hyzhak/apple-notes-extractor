@@ -5,7 +5,7 @@
 
 ## Summary
 
-Build a macOS-only, TypeScript-based CLI (npm package) that exports Apple Notes to a local target directory with deterministic `index.json`, untouched HTML note bodies (no extra frontmatter), and raw attachments mirrored by folder structure. Note HTML files carry the source created/modified timestamps; `index.json` holds metadata only. The CLI must support include/exclude folder filters, timestamp filters, and optional attachment export. Project will be CLI-first, published to npm, and built/tested via GitHub Actions with automatic publish on tagged releases while preserving offline, deterministic behavior. Use modern Node/TS tooling (ESM, tsup bundling, commander+zod, structured logging) and `@jxa/run` to drive Notes access cleanly. Target Node.js 24.x LTS for runtime stability and downstream compatibility.
+Build a macOS-only, TypeScript-based CLI (npm package) that exports Apple Notes to a local target directory with deterministic `index.json` and untouched HTML note bodies (no extra frontmatter). The current MVP is notes-only: attachments are deferred after probes showed `attachment.save` failures. Note HTML files carry the source created/modified timestamps; `index.json` holds metadata only (artifact arrays empty for now). The CLI must support include/exclude folder filters and timestamp filters. Project will be CLI-first, published to npm, and built/tested via GitHub Actions with automatic publish on tagged releases while preserving offline, deterministic behavior. Use modern Node/TS tooling (ESM, tsup bundling, commander+zod, structured logging) and `@jxa/run` to drive Notes access cleanly. Target Node.js 24.x LTS for runtime stability and downstream compatibility.
 
 ## Technical Context
 
@@ -15,7 +15,7 @@ Build a macOS-only, TypeScript-based CLI (npm package) that exports Apple Notes 
 **Testing**: vitest (unit/contract), snapshot/determinism tests, fixture-based file exports  
 **Target Platform**: macOS Notes database (local), runs on macOS host CLI  
 **Project Type**: CLI-first npm package with bin entry and optional library API  
-**Performance Goals**: Deterministic export for ~1k notes with progress updates every few seconds/batches; avoid long silent periods; minimize extra copies of note data  
+**Performance Goals**: Deterministic export for ~1k notes with progress updates every few seconds/batches; avoid long silent periods; minimize extra copies of note data; keep a runnable MVP at each step via smoke tests  
 **Constraints**: Offline/local-only processing; deterministic ordering and filenames; test-first; semantic versioning aligned to export format compatibility; avoid path length issues via sanitization  
 **Scale/Scope**: Personal/SMB libraries (hundreds to low-thousands notes, mixed attachments)
 
@@ -25,11 +25,11 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - Local-first privacy: no network calls during extraction; store only in user target dir.
 - Deterministic exports: stable ordering, filenames, and JSON structure; repeatable tests required.
-- Test-first: add fixtures and failing tests before implementation; include determinism and CLI contract tests.
+- Test-first and MVP-first: add fixtures and failing tests before implementation; keep a runnable CLI slice after each task and run smoke tests against Notes (or probes) to validate JXA behavior.
 - CLI-first: provide human-readable and JSON output, dry-run, machine-friendly exit codes, `--help`.
 - Observability: structured logging with note identifiers/paths, no content leakage, explicit partial failure reporting.
-- SemVer & releases: breaking export format changes require major bump and migration notes.
-- Current plan aligns; no violations expected.
+- SemVer & releases: breaking export format changes require a major version bump and migration notes.
+- Current plan aligns; attachments deferred until a working JXA path exists (see `scripts/probes/README.md` for validated snippets).
 - Post-design check: CI-driven npm publish on tags does not process user data and keeps extraction offline; still compliant.
 
 ## Project Structure

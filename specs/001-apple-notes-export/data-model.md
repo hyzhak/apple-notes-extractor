@@ -30,6 +30,7 @@
 - Constraints:
   - Exported path: `artifacts/<folderPath>/<sanitized-name>_<noteId>/<attachmentId>.<ext>`.
   - Unsupported types still exported as raw files; extension inferred or defaulted.
+- Current iteration: attachments are not exported; keep `attachments: []` in `IndexEntry` and skip writing `artifacts/` until attachment export is re-enabled.
 
 ### IndexEntry
 

@@ -3,6 +3,8 @@
 **Input**: Design documents from `/specs/001-apple-notes-export/`  
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
 
+**Discipline**: MVP-first. After each milestone, ensure the CLI (or probe) runs end-to-end on real Notes data. Use `scripts/probes/*.mjs` as the validated JXA reference set; add a smoke run for every functional increment.
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: Initialize tooling and project scaffolding for TypeScript 5.x on Node 24.x LTS (ESM)
@@ -28,9 +30,9 @@
 
 ---
 
-## Phase 3: User Story 1 - Export full library with structure (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Export full library (notes-only) with structure (Priority: P1) 🎯 MVP
 
-**Goal**: Full offline export of all Apple Notes with folder mirroring, HTML bodies, timestamps, and attachments
+**Goal**: Full offline export of all Apple Notes with folder mirroring, HTML bodies, and timestamps. Attachments deferred (artifact arrays stay empty).
 
 **Independent Test**: Run CLI with only `--target` on fixtures; verify `index.json`, `notes/`, and `artifacts/` match source and rerun is deterministic.
 
@@ -42,9 +44,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T015 [P] [US1] Implement Notes reader via `@jxa/run` mapping to models in `src/lib/notes-reader.ts`
+- [ ] T015 [P] [US1] Implement Notes reader via `@jxa/run` mapping to models in `src/lib/notes-reader.ts` (reuse probes for behavior)
 - [ ] T016 [P] [US1] Build export planner producing ordered work items in `src/lib/export-planner.ts`
-- [ ] T017 [P] [US1] Implement file writer for notes/attachments with timestamp preservation in `src/services/file-writer.ts`
+- [ ] T017 [P] [US1] Implement file writer for notes with timestamp preservation in `src/services/file-writer.ts` (attachments skipped)
 - [ ] T018 [US1] Wire commander CLI with zod validation for base options in `src/cli/index.ts`
 - [ ] T019 [US1] Add progress reporter and structured summaries in `src/lib/progress-reporter.ts`
 - [ ] T020 [US1] Write deterministic `index.json` generator in `src/lib/index-writer.ts`
@@ -79,7 +81,7 @@
 
 ## Phase 5: User Story 3 - Export without attachments (Priority: P3)
 
-**Goal**: Fast text-only export that omits artifacts
+**Goal**: Fast text-only export that omits artifacts (already true for MVP; use this phase for attachment toggle wiring for future enablement)
 
 **Independent Test**: Run CLI with attachments disabled; `artifacts/` absent or empty and index artifact arrays empty.
 
@@ -91,9 +93,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T032 [P] [US3] Implement attachment exclusion branch in export runner in `src/lib/export-runner.ts`
+- [ ] T032 [P] [US3] Keep attachment exclusion branch (default today) in export runner in `src/lib/export-runner.ts`; prep hook for future attachment enablement
 - [ ] T033 [US3] Ensure index writer emits empty artifact arrays when skipping attachments in `src/lib/index-writer.ts`
-- [ ] T034 [US3] Update CLI defaults/help for attachment toggle in `src/cli/index.ts`
+- [ ] T034 [US3] Update CLI defaults/help for attachment toggle in `src/cli/index.ts` (flag can remain but should be documented as “disabled until attachment probes succeed”)
 
 **Checkpoint**: Text-only export works independently with correct index metadata
 
