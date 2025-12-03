@@ -5,12 +5,23 @@
 **Status**: Draft  
 **Input**: User description: "CLI utility to create a dataset from local Apple Notes (macOS only). Extract note bodies, attachments, folder structure, created/modified timestamps, and note names (first line) into a target directory with `index.json`, `notes/`, and `artifacts/`. Support folder include/exclude filters, created/modified before/after filters, and an include/exclude attachments flag (default include). Output mirrors the Notes folder structure: `notes/folder/sub/<note-id>.html` and `artifacts/folder/sub/<note-id>/<artifact-id>.<ext>`; `index.json` fields: note id, note name, artifacts list, location, created at UTC, modified at UTC."
 
+> Current scope: attachments are deferred based on probe failures; MVP exports notes-only with empty artifact arrays.
+
 ## Clarifications
 
 ### Session 2025-11-25
 
 - Q: How should artifact filenames be stored in `index.json`? → A: Store artifact list as a JSON array of exported filenames.
 - Q: Should the exported index be renamed to match JSON format? → A: Use `index.json` containing a JSON array of note records.
+
+### Probe References (validated on real Apple Notes via @jxa/run)
+
+- `scripts/probes/notes-multi-fields.mjs`: verified `id/name/body/creationDate/modificationDate` access and note counts.
+- `scripts/probes/folder-paths.mjs`: verified folder traversal and path concatenation.
+- `scripts/probes/plaintext-vs-body.mjs`: confirmed `body()` richer than `plaintext()`.
+- `scripts/probes/determinism-notes.mjs`: confirmed deterministic ordering across reads.
+- `scripts/probes/selection.mjs`: selection works when UI-selected (not in PRD).
+- Attachment probes (`attachment-save-errorcopy.mjs`, `attachment-copy-simple.mjs`) show `attachment.save` failures; attachment export deferred.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -27,17 +38,17 @@
   - Demonstrated to users independently
 -->
 
-### User Story 1 - Export full library with structure (Priority: P1)
+### User Story 1 - Export full library (notes-only) with structure (Priority: P1) 🎯 MVP
 
-Mac user wants a full offline export of all Apple Notes into a folder they control, preserving folder hierarchy, note bodies, timestamps, and attachments.
+Mac user wants a full offline export of all Apple Notes into a folder they control, preserving folder hierarchy, note bodies, and timestamps. Attachments are deferred to a follow-up story.
 
-**Why this priority**: Provides the core value of owning a portable dataset of all notes with provenance.
+**Why this priority**: Provides the core value of owning a portable dataset of all note content with provenance; fastest path to a runnable CLI.
 
-**Independent Test**: Run the CLI with a target directory and no filters; verify all notes appear in `index.json`, HTML bodies mirror source notes, attachments are present, and folder structure matches Apple Notes.
+**Independent Test**: Run the CLI with a target directory and no filters; verify all notes appear in `index.json`, HTML bodies mirror source notes, and folder structure matches Apple Notes. Rerun to confirm determinism.
 
 **Acceptance Scenarios**:
 
-1. **Given** Apple Notes installed with multiple folders and attachments, **When** the user runs the CLI pointing to an empty target directory without filters, **Then** `index.json`, `notes/`, and `artifacts/` are created with one record per note and attachments saved in the mirrored folder/id paths.
+1. **Given** Apple Notes installed with multiple folders, **When** the user runs the CLI pointing to an empty target directory without filters, **Then** `index.json` and `notes/` are created with one record per note, and folder/id paths mirror Apple Notes.
 2. **Given** an initial successful export, **When** the user re-runs the export without changing notes, **Then** the resulting files and `index.json` content are identical to the prior run (byte-for-byte determinism).
 
 ---
@@ -57,17 +68,11 @@ Researcher wants to export only selected folders or a date-bounded subset to lim
 
 ---
 
-### User Story 3 - Export without attachments (Priority: P3)
+### User Story 3 - Attachments export (Priority: P3) 🚧 Deferred
 
-User wants a fast, text-only export with no artifacts to minimize disk usage.
+Attachment export is postponed until a dedicated follow-up. Current MVP treats attachment lists as empty and omits `artifacts/`.
 
-**Why this priority**: Supports quick backups or compliance reviews where attachments are unnecessary.
-
-**Independent Test**: Run the CLI with attachments disabled; confirm `artifacts/` is omitted or empty and `index.json` lists empty artifact references.
-
-**Acceptance Scenarios**:
-
-1. **Given** notes with attachments, **When** the user runs the CLI with attachments excluded, **Then** `index.json` records exist for each note but artifact lists are empty and no files are written under `artifacts/`.
+**Independent Test (when re-enabled)**: Run the CLI with attachments enabled; confirm `artifacts/` matches Apple Notes attachments and `index.json` lists filenames.
 
 ---
 
@@ -85,16 +90,16 @@ User wants a fast, text-only export with no artifacts to minimize disk usage.
 
 ### Functional Requirements
 
-- **FR-001**: The CLI MUST require a user-specified target directory and create `index.json`, `notes/`, and `artifacts/` within it, failing with a clear error if the path is invalid or lacks write permission.
+- **FR-001**: The CLI MUST require a user-specified target directory and create `index.json` and `notes/` within it, failing with a clear error if the path is invalid or lacks write permission. `artifacts/` is omitted in the current MVP.
 - **FR-002**: The CLI MUST extract for each note: stable note identifier, note name (first line fallback to id), body content as HTML, folder path, created-at UTC, and modified-at UTC; filenames MUST use a collision-resistant, human-readable pattern such as `<sanitized-note-name>_<note-id>`.
 - **FR-003**: The CLI MUST mirror the Apple Notes folder hierarchy under `notes/` with one HTML file per note at `notes/<folders>/<sanitized-note-name>_<note-id>.html`.
-- **FR-004**: When attachments are included (default), the CLI MUST export each attachment as a raw file under `artifacts/<folders>/<sanitized-note-name>_<note-id>/<attachment-id>.<ext>` and reference all exported filenames for that note in `index.json` as a JSON array.
-- **FR-005**: When attachments are excluded, the CLI MUST skip creating attachment files and record an empty artifact list per note while still exporting note HTML and metadata.
-- **FR-006**: The CLI MUST support filters: folders to include, folders to exclude, created-before, created-after, modified-before, and modified-after; notes failing filters MUST be omitted from `index.json`, `notes/`, and `artifacts/`.
-- **FR-007**: The CLI MUST produce `index.json` records in a deterministic order and format so repeated runs on unchanged data yield identical file content and artifact paths.
-- **FR-008**: The CLI MUST operate entirely offline on the local macOS Notes data and avoid transmitting note content or metadata externally.
-- **FR-009**: The CLI MUST surface structured, human-readable success and error messages including counts of exported notes and attachments, and explicitly flag skipped notes due to filters or access issues.
-- **FR-010**: The CLI MUST provide concise, modern-looking progress feedback during export (e.g., note/attachment counts, elapsed time, current folder) with periodic updates so that long runs (≈1k notes) never remain silent for extended periods, while avoiding overly verbose output.
+- **FR-004**: Attachment export is deferred; for now the CLI MUST record an empty artifact list per note in `index.json` and skip creating `artifacts/`.
+- **FR-005**: The CLI MUST support filters: folders to include, folders to exclude, created-before, created-after, modified-before, and modified-after; notes failing filters MUST be omitted from `index.json` and `notes/`.
+- **FR-006**: The CLI MUST produce `index.json` records in a deterministic order and format so repeated runs on unchanged data yield identical file content and paths.
+- **FR-007**: The CLI MUST operate entirely offline on the local macOS Notes data and avoid transmitting note content or metadata externally.
+- **FR-008**: The CLI MUST surface structured, human-readable success and error messages including counts of exported notes (and attachments once enabled), and explicitly flag skipped notes due to filters or access issues.
+- **FR-009**: The CLI MUST provide concise, modern-looking progress feedback during export (e.g., note counts, elapsed time, current folder) with periodic updates so that long runs (≈1k notes) never remain silent for extended periods, while avoiding overly verbose output.
+- **FR-010**: The CLI MUST guard for macOS/Notes availability and present a clear error when run on unsupported platforms or without Automation permission.
 
 ### Key Entities _(include if feature involves data)_
 
@@ -108,13 +113,14 @@ User wants a fast, text-only export with no artifacts to minimize disk usage.
 - Apple Notes exposes a stable per-note identifier suitable for filenames and cross-referencing attachments.
 - Note bodies can be reliably converted to HTML for export without loss of visible content.
 - Timestamps in Apple Notes can be normalized to UTC without ambiguity; local timezone is available for conversion.
+- Attachment binaries are currently not reliably retrievable via JXA; export defers artifacts until a working path is validated.
 
 ## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
-- **SC-001**: Running the CLI with default options exports 100% of readable notes and attachments into the target directory with `index.json` record count matching exported notes.
+- **SC-001**: Running the CLI with default options exports 100% of readable notes into the target directory with `index.json` record count matching exported notes; attachment fields remain empty in this MVP.
 - **SC-002**: Two consecutive exports on unchanged data produce identical `index.json` content and matching checksums for all generated files.
-- **SC-003**: Applying folder or date filters reduces the exported set accordingly, with zero records in `index.json` for excluded folders/dates and no stray files under `notes/` or `artifacts/`.
-- **SC-004**: Running with attachments disabled results in zero files under `artifacts/` and empty artifact lists in `index.json` while still exporting all eligible note HTML files.
-- **SC-005**: During an export of ~1k notes, users see periodic progress updates (at least every few seconds or every fixed batch of notes) plus a final summary with counts of exported and skipped notes/attachments and elapsed time.
+- **SC-003**: Applying folder or date filters reduces the exported set accordingly, with zero records in `index.json` for excluded folders/dates and no stray files under `notes/`.
+- **SC-004**: During an export of ~1k notes, users see periodic progress updates (at least every few seconds or every fixed batch of notes) plus a final summary with counts of exported and skipped notes and elapsed time.
+- **SC-005**: macOS guard and permission errors are surfaced clearly (e.g., “Apple Notes automation not available on this system”).

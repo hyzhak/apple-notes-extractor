@@ -25,10 +25,10 @@ apple-notes-export \
   --include-folders "Work/Research" \
   --exclude-folders "Personal" \
   --created-after "2024-01-01T00:00:00Z" \
-  --attachments=true
+  --attachments=false
 ```
 
-- Default includes attachments; set `--attachments=false` for text-only.
+- Attachments are currently disabled pending a follow-up; artifact lists remain empty and `artifacts/` is not written.
 - Fails fast if target directory is non-empty unless `--force` provided (overwrites collisions only).
 - Progress prints periodic counts; final JSON summary emitted on completion.
 
