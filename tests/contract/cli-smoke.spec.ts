@@ -5,12 +5,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/lib/notes-bridge', () => {
   return {
-    ensureMacOS: vi.fn(),
-    fetchNotesSummary: vi.fn()
+    ensureMacOS: vi.fn()
   };
 });
 
-import { ensureMacOS, fetchNotesSummary } from '../../src/lib/notes-bridge';
+vi.mock('../../src/lib/notes-reader', () => {
+  return {
+    readFirstNote: vi.fn()
+  };
+});
+
+vi.mock('../../src/services/file-writer', () => {
+  return {
+    writeNoteHtml: vi.fn()
+  };
+});
+
+import { ensureMacOS } from '../../src/lib/notes-bridge';
+import { readFirstNote } from '../../src/lib/notes-reader';
+import { writeNoteHtml } from '../../src/services/file-writer';
 import { main } from '../../src/cli/index';
 
 describe('cli smoke path', () => {
@@ -21,7 +34,8 @@ describe('cli smoke path', () => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     vi.mocked(ensureMacOS).mockReset();
-    vi.mocked(fetchNotesSummary).mockReset();
+    vi.mocked(readFirstNote).mockReset();
+    vi.mocked(writeNoteHtml).mockReset();
     process.exitCode = 0;
   });
 
@@ -31,9 +45,18 @@ describe('cli smoke path', () => {
   });
 
   it('writes summary to index.json and prints status', async () => {
-    vi.mocked(fetchNotesSummary).mockResolvedValue({
-      totalNotes: 2,
-      firstNote: { id: 'abc', name: 'Hello', folderPath: 'Notes/Personal' }
+    vi.mocked(readFirstNote).mockResolvedValue({
+      id: 'abc',
+      name: 'Hello',
+      bodyHtml: '<p>hello</p>',
+      folderPath: 'Notes/Personal',
+      createdAtUtc: '2024-01-01T00:00:00Z',
+      modifiedAtUtc: '2024-01-02T00:00:00Z',
+      attachments: []
+    });
+    vi.mocked(writeNoteHtml).mockResolvedValue({
+      absoluteHtmlPath: '/tmp/path/Notes/Personal/Hello_abc.html',
+      relativeHtmlPath: 'Notes/Personal/Hello_abc.html'
     });
 
     const targetDir = await fs.mkdtemp(path.join(os.tmpdir(), 'notes-cli-'));
@@ -41,17 +64,22 @@ describe('cli smoke path', () => {
       await main(['node', 'cli', '--target', targetDir, '--force']);
 
       const indexJson = await fs.readFile(path.join(targetDir, 'index.json'), 'utf8');
-      const parsed = JSON.parse(indexJson) as {
-        noteCount: number;
-        firstNote: { id: string; name: string; folderPath: string };
-      };
+      const parsed = JSON.parse(indexJson) as any[];
 
-      expect(parsed).toEqual({
-        noteCount: 2,
-        firstNote: { id: 'abc', name: 'Hello', folderPath: 'Notes/Personal' }
-      });
+      expect(parsed).toEqual([
+        {
+          noteId: 'abc',
+          noteName: 'Hello',
+          artifacts: [],
+          folderPath: 'Notes/Personal',
+          createdAtUtc: '2024-01-01T00:00:00Z',
+          modifiedAtUtc: '2024-01-02T00:00:00Z',
+          htmlPath: 'Notes/Personal/Hello_abc.html'
+        }
+      ]);
       expect(ensureMacOS).toHaveBeenCalledTimes(1);
-      expect(fetchNotesSummary).toHaveBeenCalledTimes(1);
+      expect(readFirstNote).toHaveBeenCalledTimes(1);
+      expect(writeNoteHtml).toHaveBeenCalledTimes(1);
       expect(process.exitCode).toBe(0);
       expect(stdoutSpy).toHaveBeenCalled();
     } finally {
@@ -71,7 +99,8 @@ describe('cli smoke path', () => {
       await fs.rm(targetDir, { recursive: true, force: true });
     }
 
-    expect(fetchNotesSummary).not.toHaveBeenCalled();
+    expect(readFirstNote).not.toHaveBeenCalled();
+    expect(writeNoteHtml).not.toHaveBeenCalled();
     expect(process.exitCode).toBe(1);
   });
 });
