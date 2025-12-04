@@ -45,6 +45,14 @@ export function ensureMacOS(): void {
   }
 }
 
+function toSafeString(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return null;
+}
+
 function normalizePreview(raw: unknown): NotePreview | null {
   if (!raw || typeof raw !== 'object') {
     return null;
@@ -103,8 +111,6 @@ export async function fetchNotesSummary(options: FetchNotesSummaryOptions = {}):
         if (!collection || typeof (collection as { length?: number }).length !== 'number') return res;
         const iterable = collection as { length: number; [index: number]: unknown };
         for (let i = 0; i < iterable.length; i += 1) {
-          // JXA collections behave like array-likes but are not typed.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           res.push(iterable[i] as T);
         }
         return res;
@@ -131,8 +137,8 @@ export async function fetchNotesSummary(options: FetchNotesSummaryOptions = {}):
           safe(() => (typeof note.uuid === 'function' ? note.uuid() : null));
 
         firstNote = {
-          id: idValue == null ? null : String(idValue),
-          name: safe(() => (typeof note.name === 'function' ? String(note.name()) : null)),
+          id: toSafeString(idValue),
+          name: toSafeString(safe(() => (typeof note.name === 'function' ? note.name() : null))),
           folderPath: folderPath ?? null
         };
       };

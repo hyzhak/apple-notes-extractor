@@ -2,7 +2,9 @@ import fs from 'node:fs/promises';
 import { Command } from 'commander';
 import { z } from 'zod';
 import { createExportContext } from '../lib/export-context';
-import { ensureMacOS, fetchNotesSummary } from '../lib/notes-bridge';
+import { ensureMacOS } from '../lib/notes-bridge';
+import { readFirstNote } from '../lib/notes-reader';
+import { writeNoteHtml } from '../services/file-writer';
 
 const cliSchema = z.object({
   target: z.string().min(1, 'Target directory is required'),
@@ -35,35 +37,43 @@ export async function main(argv: string[]): Promise<void> {
 
     ensureMacOS();
 
-    const notesSummary = await fetchNotesSummary();
+    const note = await readFirstNote();
     const context = await createExportContext({
       targetDir: parsed.target,
       force: parsed.force,
       includeAttachments: false
     });
 
+    const writeResult = await writeNoteHtml(note, context.notesPath);
+
+    const indexEntries = [
+      {
+        noteId: note.id,
+        noteName: note.name,
+        artifacts: [],
+        folderPath: note.folderPath,
+        createdAtUtc: note.createdAtUtc,
+        modifiedAtUtc: note.modifiedAtUtc,
+        htmlPath: writeResult.relativeHtmlPath
+      }
+    ];
+
     const summary = {
-      noteCount: notesSummary.totalNotes,
-      firstNote: notesSummary.firstNote
+      status: 'ok',
+      indexPath: context.indexPath,
+      notesPath: context.notesPath,
+      exported: indexEntries.length,
+      firstNote: {
+        id: note.id,
+        name: note.name,
+        folderPath: note.folderPath,
+        htmlPath: writeResult.relativeHtmlPath
+      }
     };
 
-    await fs.writeFile(context.indexPath, JSON.stringify(summary, null, 2), 'utf8');
+    await fs.writeFile(context.indexPath, JSON.stringify(indexEntries, null, 2), 'utf8');
 
-    // Smoke-run summary to stdout for MVP.
-    process.stdout.write(
-      JSON.stringify(
-        {
-          status: 'ok',
-          notesPath: context.notesPath,
-          indexPath: context.indexPath,
-          attachments: 'disabled',
-          noteCount: notesSummary.totalNotes,
-          firstNote: notesSummary.firstNote
-        },
-        null,
-        2
-      ) + '\n'
-    );
+    process.stdout.write(JSON.stringify(summary, null, 2) + '\n');
     process.exitCode = 0;
   } catch (error) {
     const maybeCommanderError = error as Error & { code?: string };

@@ -30,12 +30,12 @@ Goal: Smoke uses @jxa/run to talk to Notes and report counts; no fixtures.
 
 Goal: Export first note’s HTML to target, capture created/modified times; smoke uses real Notes.
 
-- [ ] T020 Models for Note/IndexEntry in `src/models/note.ts` (only fields needed for single-note export)
-- [ ] T021 Path helper for deterministic slug + notes folder layout in `src/services/pathing.ts` (scoped to single-note use)
-- [ ] T022 Single-note reader via JXA in `src/lib/notes-reader.ts` (first note only)
-- [ ] T023 File writer to save one HTML with timestamps in `src/services/file-writer.ts`
-- [ ] T024 CLI exports first note to `notes/` and `index.json` (single entry)
-- [ ] T025 Smoke: rerun on same target (force) yields identical outputs
+- [x] T020 Models for Note/IndexEntry in `src/models/note.ts` (only fields needed for single-note export)
+- [x] T021 Path helper for deterministic slug + notes folder layout in `src/services/pathing.ts` (scoped to single-note use)
+- [x] T022 Single-note reader via JXA in `src/lib/notes-reader.ts` (first note only)
+- [x] T023 File writer to save one HTML with timestamps in `src/services/file-writer.ts`
+- [x] T024 CLI exports first note to `notes/` and `index.json` (single entry)
+- [x] T025 Smoke: rerun on same target (force) yields identical outputs
 
 ---
 
