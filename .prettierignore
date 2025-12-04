@@ -1,0 +1,9 @@
+dist/
+coverage/
+node_modules/
+.specify/
+.venv/
+artifacts/
+log/
+scripts/probes/
+*.log
