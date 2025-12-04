@@ -21,8 +21,8 @@
 
 Goal: Smoke uses @jxa/run to talk to Notes and report counts; no fixtures.
 
-- [ ] T010 Notes bridge with macOS guard using @jxa/run (`src/lib/notes-bridge.ts`)
-- [ ] T011 CLI smoke path calls Notes to return note count + first note id/name/folder; writes summary JSON to target (replaces empty index)
+- [x] T010 Notes bridge with macOS guard using @jxa/run (`src/lib/notes-bridge.ts`)
+- [x] T011 CLI smoke path calls Notes to return note count + first note id/name/folder; writes summary JSON to target (replaces empty index)
 
 ---
 
