@@ -1,130 +1,96 @@
-# Tasks: Apple Notes Export CLI
+# Tasks: Apple Notes Export CLI (Walking Skeleton, Real Notes First)
 
-**Input**: Design documents from `/specs/001-apple-notes-export/`  
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
+**Input**: plan.md, spec.md, research.md, data-model.md, contracts/  
+**Discipline**: Vertical slices with real JXA Notes access in every functional slice. Smoke/contract must exercise real Notes (fixtures allowed only for unit-level helpers). No utilities without an immediate consumer.
 
-**Discipline**: MVP-first. After each milestone, ensure the CLI (or probe) runs end-to-end on real Notes data. Use `scripts/probes/*.mjs` as the validated JXA reference set; add a smoke run for every functional increment.
+## Phase 0 — Always-Runnable Smoke (done)
 
-## Phase 1: Setup (Shared Infrastructure)
+- [x] T000 Minimal CLI: validate target dir, write empty `index.json`, emit JSON summary (current smoke)
 
-**Purpose**: Initialize tooling and project scaffolding for TypeScript 5.x on Node 24.x LTS (ESM)
+## Phase 1 — Tooling (done)
 
-- [ ] T001 Add package metadata, `bin` entry, and Node 24.x engines field in `package.json`
-- [ ] T002 Configure TypeScript project refs and ESM settings in `tsconfig.json`
-- [ ] T003 [P] Add tsup bundle config for CLI + library outputs in `tsup.config.ts`
-- [ ] T004 [P] Configure eslint/prettier rules for ESM TypeScript in `.eslintrc.*` and `.prettierrc.*`
-- [ ] T005 [P] Add vitest setup (ts-node resolver, coverage, snapshot dirs) in `vitest.config.ts`
-
----
-
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Core scaffolding and shared utilities required before user stories
-
-- [ ] T006 Create source tree stubs (`src/cli/`, `src/lib/`, `src/models/`, `src/services/`) with index exports in `src/index.ts`
-- [ ] T007 Define Note/Attachment/IndexEntry schemas and types in `src/models/note.ts`
-- [ ] T008 [P] Implement deterministic slug/path helpers for notes and artifacts in `src/services/pathing.ts`
-- [ ] T009 [P] Add structured logging and progress utilities in `src/services/logging.ts`
-- [ ] T010 Implement macOS guard and Notes JXA bridge wrapper in `src/lib/notes-bridge.ts`
-- [ ] T011 Define export configuration + target directory validation (empty or force) in `src/lib/export-context.ts`
+- [x] T001 Package metadata/bin/engines
+- [x] T002 TS project refs + ESM settings
+- [x] T003 [P] tsup bundle config
+- [x] T004 [P] eslint/prettier configs
+- [x] T005 [P] vitest config
 
 ---
 
-## Phase 3: User Story 1 - Export full library (notes-only) with structure (Priority: P1) 🎯 MVP
+## Phase 2 — JXA Handshake Slice (real Notes ping)
 
-**Goal**: Full offline export of all Apple Notes with folder mirroring, HTML bodies, and timestamps. Attachments deferred (artifact arrays stay empty).
+Goal: Smoke uses @jxa/run to talk to Notes and report counts; no fixtures.
 
-**Independent Test**: Run CLI with only `--target` on fixtures; verify `index.json`, `notes/`, and `artifacts/` match source and rerun is deterministic.
-
-### Tests for User Story 1
-
-- [ ] T012 [P] [US1] Add full-library fixtures with notes + attachments in `tests/fixtures/full-library/`
-- [ ] T013 [P] [US1] Write CLI contract test for default export in `tests/contract/cli-full-export.spec.ts`
-- [ ] T014 [P] [US1] Add integration test for deterministic re-run outputs in `tests/integration/export-determinism.spec.ts`
-
-### Implementation for User Story 1
-
-- [ ] T015 [P] [US1] Implement Notes reader via `@jxa/run` mapping to models in `src/lib/notes-reader.ts` (reuse probes for behavior)
-- [ ] T016 [P] [US1] Build export planner producing ordered work items in `src/lib/export-planner.ts`
-- [ ] T017 [P] [US1] Implement file writer for notes with timestamp preservation in `src/services/file-writer.ts` (attachments skipped)
-- [ ] T018 [US1] Wire commander CLI with zod validation for base options in `src/cli/index.ts`
-- [ ] T019 [US1] Add progress reporter and structured summaries in `src/lib/progress-reporter.ts`
-- [ ] T020 [US1] Write deterministic `index.json` generator in `src/lib/index-writer.ts`
-- [ ] T021 [US1] Orchestrate export flow (planner → writer → summaries) in `src/lib/export-runner.ts`
-
-**Checkpoint**: Full export with attachments works and is deterministic
+- [ ] T010 Notes bridge with macOS guard using @jxa/run (`src/lib/notes-bridge.ts`)
+- [ ] T011 CLI smoke path calls Notes to return note count + first note id/name/folder; writes summary JSON to target (replaces empty index)
 
 ---
 
-## Phase 4: User Story 2 - Targeted export by folders and dates (Priority: P2)
+## Phase 3 — Single Note Export Slice
 
-**Goal**: Export only selected folders or date-bounded notes
+Goal: Export first note’s HTML to target, capture created/modified times; smoke uses real Notes.
 
-**Independent Test**: Run CLI with include/exclude folders and date bounds; only matching notes appear in outputs.
-
-### Tests for User Story 2
-
-- [ ] T022 [P] [US2] Extend fixtures with folder/date coverage in `tests/fixtures/filters/`
-- [ ] T023 [P] [US2] Add CLI contract test for include/exclude folders in `tests/contract/cli-filters.spec.ts`
-- [ ] T024 [P] [US2] Add integration test for created/modified date filters in `tests/integration/export-date-filters.spec.ts`
-
-### Implementation for User Story 2
-
-- [ ] T025 [P] [US2] Implement filter option schemas and parsing in `src/lib/filter-schema.ts`
-- [ ] T026 [US2] Apply folder/date filters in planner/reader flow in `src/lib/filtering.ts`
-- [ ] T027 [US2] Extend CLI options and help for filters in `src/cli/index.ts`
-- [ ] T028 [US2] Report skipped counts due to filters in `src/lib/progress-reporter.ts`
-
-**Checkpoint**: Filtered exports work independently with accurate omissions
+- [ ] T020 Models for Note/IndexEntry in `src/models/note.ts` (only fields needed for single-note export)
+- [ ] T021 Path helper for deterministic slug + notes folder layout in `src/services/pathing.ts` (scoped to single-note use)
+- [ ] T022 Single-note reader via JXA in `src/lib/notes-reader.ts` (first note only)
+- [ ] T023 File writer to save one HTML with timestamps in `src/services/file-writer.ts`
+- [ ] T024 CLI exports first note to `notes/` and `index.json` (single entry)
+- [ ] T025 Smoke: rerun on same target (force) yields identical outputs
 
 ---
 
-## Phase 5: User Story 3 - Export without attachments (Priority: P3)
+## Phase 4 — Full Notes Export (no filters, no attachments)
 
-**Goal**: Fast text-only export that omits artifacts (already true for MVP; use this phase for attachment toggle wiring for future enablement)
+Goal: Export all notes with deterministic ordering and index; smoke uses real Notes library.
 
-**Independent Test**: Run CLI with attachments disabled; `artifacts/` absent or empty and index artifact arrays empty.
-
-### Tests for User Story 3
-
-- [ ] T029 [P] [US3] Add fixtures for notes with attachments to skip in `tests/fixtures/no-attachments/`
-- [ ] T030 [P] [US3] Write CLI contract test for `--attachments=false` in `tests/contract/cli-no-attachments.spec.ts`
-- [ ] T031 [P] [US3] Add integration test ensuring artifact directories are not written in `tests/integration/export-no-attachments.spec.ts`
-
-### Implementation for User Story 3
-
-- [ ] T032 [P] [US3] Keep attachment exclusion branch (default today) in export runner in `src/lib/export-runner.ts`; prep hook for future attachment enablement
-- [ ] T033 [US3] Ensure index writer emits empty artifact arrays when skipping attachments in `src/lib/index-writer.ts`
-- [ ] T034 [US3] Update CLI defaults/help for attachment toggle in `src/cli/index.ts` (flag can remain but should be documented as “disabled until attachment probes succeed”)
-
-**Checkpoint**: Text-only export works independently with correct index metadata
+- [ ] T030 Expand reader to traverse all folders/notes deterministically (reuse probes ordering)
+- [ ] T031 Planner to produce ordered work items in `src/lib/export-planner.ts`
+- [ ] T032 Index writer for all notes in `src/lib/index-writer.ts`
+- [ ] T033 Export runner orchestrating reader → planner → writer in `src/lib/export-runner.ts`
+- [ ] T034 CLI default command runs full export to target; smoke validates rerun determinism
+- [ ] T035 Unit fixtures (optional) for helpers only (pathing, sorting); no fixture-driven functional tests
 
 ---
 
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 5 — Filters Slice A (Folders only, real Notes)
 
-**Purpose**: Hardening and documentation across stories
+Goal: Include/exclude folders applied against live Notes; deterministic outputs.
 
-- [ ] T035 [P] Refresh README.md and `specs/001-apple-notes-export/quickstart.md` with final CLI examples
-- [ ] T036 [P] Add long-run determinism soak test against fixtures in `tests/integration/determinism-soak.spec.ts`
-- [ ] T037 Finalize CI/publish workflow for lint/test/build/tag publish in `.github/workflows/ci.yml`
+- [ ] T040 Filter schema + parsing for folders in `src/lib/filter-schema.ts`
+- [ ] T041 Apply folder filters in planner/reader flow in `src/lib/filtering.ts`
+- [ ] T042 CLI options/help for folder filters in `src/cli/index.ts`
+- [ ] T043 Smoke: run with include/exclude folders against live Notes; verify counts/index reflect filters
 
 ---
 
-## Dependencies & Execution Order
+## Phase 6 — Filters Slice B (Date bounds, real Notes)
 
-- Phases: Setup → Foundational → US1 (P1) → US2 (P2) → US3 (P3) → Polish
-- User stories are independent after Foundational; US1 delivers MVP and is prerequisite for sequencing
-- Tests within each story should precede implementation tasks; [P] tasks can run concurrently when files differ
+Goal: Created/modified date filters applied against live Notes; deterministic outputs.
 
-## Parallel Execution Examples
+- [ ] T044 Extend filter schema for date bounds in `src/lib/filter-schema.ts`
+- [ ] T045 Apply date filters in planner/reader flow in `src/lib/filtering.ts`
+- [ ] T046 CLI options/help for date filters in `src/cli/index.ts`
+- [ ] T047 Smoke: run with date bounds against live Notes; verify counts/index reflect filters
 
-- US1: Run T012, T013, T014 in parallel; implement T015, T016, T017 concurrently before wiring T018–T021
-- US2: Parallelize T022–T024 fixture/tests while T025 builds schemas
-- US3: Parallelize T029–T031 while T032 adjusts runner; sequence T033–T034 after runner changes
+---
 
-## Implementation Strategy
+## Phase 7 — Logging & Progress (only when visible in smoke)
 
-- MVP: Complete Setup → Foundational → US1, validate deterministic full export, then decide on release
-- Incremental: After MVP, deliver US2 filters, validate independently, then US3 attachment toggle
-- Maintain determinism gates: ensure every new path/filter respects ordering and stable filenames before merge
+- [ ] T060 Structured logging/progress reporter in `src/lib/progress-reporter.ts`
+- [ ] T061 Surface progress in CLI output (rate-limited) and keep smoke green
+
+---
+
+## Phase 8 — Polish & Docs
+
+- [ ] T070 Refresh README.md and `specs/001-apple-notes-export/quickstart.md` with real-notes examples
+- [ ] T071 Determinism soak (long-run) against live library
+- [ ] T072 CI/publish workflow in `.github/workflows/ci.yml`
+
+---
+
+## Execution rules
+
+- Always keep smoke hitting real Notes; use fixtures only for unit-level helpers.
+- Tests precede code for each slice; do not introduce unused scaffolding.
+- Small steps: land one slice at a time, verifying determinism on reruns.
