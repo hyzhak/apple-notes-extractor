@@ -134,6 +134,18 @@ dist
 !.yarn/sdks
 !.yarn/versions
 
+# Editor and OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.tmp
+
+# Python virtualenv/cache (present in repo)
+.venv/
+__pycache__/
+*.pyc
+
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
