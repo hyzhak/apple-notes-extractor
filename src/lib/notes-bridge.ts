@@ -1,4 +1,5 @@
 import { run } from '@jxa/run';
+import type { JXAAccount, JXAFolder, JXANote } from './notes/types';
 
 // Provided by macOS JavaScript for Automation runtime.
 declare function Application(name: string): any;
@@ -78,22 +79,6 @@ function normalizePreview(raw: unknown): NotePreview | null {
 
   return { id, name, folderPath };
 }
-
-type JXANote = {
-  id?: () => unknown;
-  uuid?: () => unknown;
-  name?: () => unknown;
-};
-
-type JXAFolder = {
-  name?: () => unknown;
-  notes?: () => unknown;
-  folders?: () => unknown;
-};
-
-type JXAAccount = {
-  folders?: () => unknown;
-};
 
 export async function fetchNotesSummary(options: FetchNotesSummaryOptions = {}): Promise<NotesSummary> {
   ensureMacOS();

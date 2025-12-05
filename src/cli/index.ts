@@ -1,10 +1,8 @@
-import fs from 'node:fs/promises';
 import { Command } from 'commander';
 import { z } from 'zod';
 import { createExportContext } from '../lib/export-context';
 import { ensureMacOS } from '../lib/notes-bridge';
-import { readFirstNote } from '../lib/notes-reader';
-import { writeNoteHtml } from '../services/file-writer';
+import { exportNotes } from '../lib/export-runner';
 
 const cliSchema = z.object({
   target: z.string().min(1, 'Target directory is required'),
@@ -37,41 +35,21 @@ export async function main(argv: string[]): Promise<void> {
 
     ensureMacOS();
 
-    const note = await readFirstNote();
     const context = await createExportContext({
       targetDir: parsed.target,
       force: parsed.force,
       includeAttachments: false
     });
 
-    const writeResult = await writeNoteHtml(note, context.notesPath);
-
-    const indexEntries = [
-      {
-        noteId: note.id,
-        noteName: note.name,
-        artifacts: [],
-        folderPath: note.folderPath,
-        createdAtUtc: note.createdAtUtc,
-        modifiedAtUtc: note.modifiedAtUtc,
-        htmlPath: writeResult.relativeHtmlPath
-      }
-    ];
+    const result = await exportNotes(context);
 
     const summary = {
       status: 'ok',
-      indexPath: context.indexPath,
-      notesPath: context.notesPath,
-      exported: indexEntries.length,
-      firstNote: {
-        id: note.id,
-        name: note.name,
-        folderPath: note.folderPath,
-        htmlPath: writeResult.relativeHtmlPath
-      }
+      indexPath: result.indexPath,
+      notesPath: result.notesPath,
+      exported: result.exported,
+      firstNote: result.firstNote
     };
-
-    await fs.writeFile(context.indexPath, JSON.stringify(indexEntries, null, 2), 'utf8');
 
     process.stdout.write(JSON.stringify(summary, null, 2) + '\n');
     process.exitCode = 0;
