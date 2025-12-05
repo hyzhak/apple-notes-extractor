@@ -52,8 +52,6 @@ Goal: Export all notes in one traversal, writing each note immediately (no doubl
 
 ---
 
-
-
 ## Phase 5 — Filters Slice A (Folders only, real Notes)
 
 Goal: Include/exclude folders applied against live Notes; deterministic outputs.
