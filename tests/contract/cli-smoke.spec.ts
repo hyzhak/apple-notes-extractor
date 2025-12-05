@@ -9,21 +9,14 @@ vi.mock('../../src/lib/notes-bridge', () => {
   };
 });
 
-vi.mock('../../src/lib/notes-reader', () => {
+vi.mock('../../src/lib/export-runner', () => {
   return {
-    readFirstNote: vi.fn()
-  };
-});
-
-vi.mock('../../src/services/file-writer', () => {
-  return {
-    writeNoteHtml: vi.fn()
+    exportNotes: vi.fn()
   };
 });
 
 import { ensureMacOS } from '../../src/lib/notes-bridge';
-import { readFirstNote } from '../../src/lib/notes-reader';
-import { writeNoteHtml } from '../../src/services/file-writer';
+import { exportNotes } from '../../src/lib/export-runner';
 import { main } from '../../src/cli/index';
 
 describe('cli smoke path', () => {
@@ -34,8 +27,7 @@ describe('cli smoke path', () => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     vi.mocked(ensureMacOS).mockReset();
-    vi.mocked(readFirstNote).mockReset();
-    vi.mocked(writeNoteHtml).mockReset();
+    vi.mocked(exportNotes).mockReset();
     process.exitCode = 0;
   });
 
@@ -45,18 +37,30 @@ describe('cli smoke path', () => {
   });
 
   it('writes summary to index.json and prints status', async () => {
-    vi.mocked(readFirstNote).mockResolvedValue({
-      id: 'abc',
-      name: 'Hello',
-      bodyHtml: '<p>hello</p>',
-      folderPath: 'Notes/Personal',
-      createdAtUtc: '2024-01-01T00:00:00Z',
-      modifiedAtUtc: '2024-01-02T00:00:00Z',
-      attachments: []
-    });
-    vi.mocked(writeNoteHtml).mockResolvedValue({
-      absoluteHtmlPath: '/tmp/path/Notes/Personal/Hello_abc.html',
-      relativeHtmlPath: 'Notes/Personal/Hello_abc.html'
+    vi.mocked(exportNotes).mockImplementation(async (context) => {
+      const entries = [
+        {
+          noteId: 'abc',
+          noteName: 'Hello',
+          artifacts: [],
+          folderPath: 'Notes/Personal',
+          createdAtUtc: '2024-01-01T00:00:00Z',
+          modifiedAtUtc: '2024-01-02T00:00:00Z',
+          htmlPath: 'Notes/Personal/Hello_abc.html'
+        }
+      ];
+      await fs.writeFile(context.indexPath, JSON.stringify(entries, null, 2), 'utf8');
+      return {
+        exported: entries.length,
+        indexPath: context.indexPath,
+        notesPath: context.notesPath,
+        firstNote: {
+          id: entries[0].noteId,
+          name: entries[0].noteName,
+          folderPath: entries[0].folderPath,
+          htmlPath: entries[0].htmlPath
+        }
+      };
     });
 
     const targetDir = await fs.mkdtemp(path.join(os.tmpdir(), 'notes-cli-'));
@@ -78,8 +82,7 @@ describe('cli smoke path', () => {
         }
       ]);
       expect(ensureMacOS).toHaveBeenCalledTimes(1);
-      expect(readFirstNote).toHaveBeenCalledTimes(1);
-      expect(writeNoteHtml).toHaveBeenCalledTimes(1);
+      expect(exportNotes).toHaveBeenCalledTimes(1);
       expect(process.exitCode).toBe(0);
       expect(stdoutSpy).toHaveBeenCalled();
     } finally {
@@ -99,8 +102,7 @@ describe('cli smoke path', () => {
       await fs.rm(targetDir, { recursive: true, force: true });
     }
 
-    expect(readFirstNote).not.toHaveBeenCalled();
-    expect(writeNoteHtml).not.toHaveBeenCalled();
+    expect(exportNotes).not.toHaveBeenCalled();
     expect(process.exitCode).toBe(1);
   });
 });

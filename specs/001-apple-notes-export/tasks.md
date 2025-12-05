@@ -39,18 +39,20 @@ Goal: Export first note’s HTML to target, capture created/modified times; smok
 
 ---
 
-## Phase 4 — Full Notes Export (no filters, no attachments)
+## Phase 4 — Full Notes Export (single-pass, simple loop)
 
-Goal: Export all notes with deterministic ordering and index; smoke uses real Notes library.
+Goal: Export all notes in one traversal, writing each note immediately (no double buffering); smoke uses real Notes.
 
-- [ ] T030 Expand reader to traverse all folders/notes deterministically (reuse probes ordering)
-- [ ] T031 Planner to produce ordered work items in `src/lib/export-planner.ts`
-- [ ] T032 Index writer for all notes in `src/lib/index-writer.ts`
-- [ ] T033 Export runner orchestrating reader → planner → writer in `src/lib/export-runner.ts`
-- [ ] T034 CLI default command runs full export to target; smoke validates rerun determinism
-- [ ] T035 Unit fixtures (optional) for helpers only (pathing, sorting); no fixture-driven functional tests
+- [x] T030 Get note count (JXA): minimal script returns `Notes.notes().length`; unit covers mock; log count.
+- [x] T031 Single-note read by index (JXA): fetch id/name/body/created/modified; folderPath default 'Notes'; unit tests for missing id/body.
+- [x] T032 Export loop: in `export-runner`, for i in 0..count-1 call read-by-index, write HTML, append index entry; no arrays of notes.
+- [x] T033 Wire CLI to new loop; keep smoke summary; add debug logs for count and per-note.
+- [ ] T034 Smoke determinism rerun on same target (force) yields identical outputs; fix any remaining errors.
+- [ ] T035 Cleanup/lint/tests: remove unused helpers, ensure files stay small and readable.
 
 ---
+
+
 
 ## Phase 5 — Filters Slice A (Folders only, real Notes)
 
