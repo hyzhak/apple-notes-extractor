@@ -54,6 +54,7 @@ describe('cli smoke path', () => {
         exported: entries.length,
         indexPath: context.indexPath,
         notesPath: context.notesPath,
+        skipped: [],
         firstNote: {
           id: entries[0].noteId,
           name: entries[0].noteName,

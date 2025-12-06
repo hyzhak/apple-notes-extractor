@@ -9,6 +9,7 @@ import type { Note } from '../models/note';
 
 export interface ExportSummary {
   exported: number;
+  skipped: Array<{ index: number; reason: string }>;
   indexPath: string;
   notesPath: string;
   firstNote:
@@ -31,6 +32,7 @@ export async function exportNotes(
   const entries = [];
   let first: ExportSummary['firstNote'] = null;
   let written = 0;
+  const skipped: ExportSummary['skipped'] = [];
   for (let i = 0; i < total; i += 1) {
     let note: Note;
     try {
@@ -39,6 +41,7 @@ export async function exportNotes(
       const message = error instanceof Error ? error.message : String(error);
       if (error instanceof NotesBridgeError) {
         logProgress('export.skip', { idx: i + 1, reason: message });
+        skipped.push({ index: i, reason: message });
         continue;
       }
       throw error;
@@ -75,6 +78,7 @@ export async function exportNotes(
 
   return {
     exported: entries.length,
+    skipped,
     indexPath: context.indexPath,
     notesPath: context.notesPath,
     firstNote: first

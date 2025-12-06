@@ -48,6 +48,7 @@ export async function main(argv: string[]): Promise<void> {
       indexPath: result.indexPath,
       notesPath: result.notesPath,
       exported: result.exported,
+      skipped: result.skipped,
       firstNote: result.firstNote
     };
 

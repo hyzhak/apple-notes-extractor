@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { NotesBridgeError } from '../../src/lib/notes-bridge';
 
 vi.mock('../../src/lib/notes/reader', () => ({
   getNoteCount: vi.fn(),
@@ -63,9 +64,36 @@ describe('exportNotes', () => {
 
     expect(indexContent.length).toBeGreaterThan(0);
     expect(summary.exported).toBe(1);
+    expect(summary.skipped).toEqual([]);
     expect(summary.firstNote?.id).toBe('1');
     expect(getNoteCount).toHaveBeenCalledTimes(1);
     expect(readNoteByIndex).toHaveBeenCalledTimes(1);
     expect(writeNoteHtml).toHaveBeenCalledTimes(1);
+  });
+  it('tracks skipped notes', async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'export-runner-'));
+    const context: ExportContext = {
+      targetDir: tempDir,
+      notesPath: path.join(tempDir, 'notes'),
+      artifactsPath: path.join(tempDir, 'artifacts'),
+      indexPath: path.join(tempDir, 'index.json'),
+      includeAttachments: false
+    };
+
+    vi.mocked(getNoteCount).mockResolvedValue(2);
+    vi.mocked(readNoteByIndex).mockImplementation((idx: number) => {
+      if (idx === 0) return Promise.resolve(createNote());
+      return Promise.reject(new NotesBridgeError('missing'));
+    });
+
+    vi.mocked(writeNoteHtml).mockResolvedValue({
+      absoluteHtmlPath: path.join(context.notesPath, 'Notes/First_1.html'),
+      relativeHtmlPath: 'Notes/First_1.html'
+    });
+
+    const summary = await exportNotes(context);
+
+    expect(summary.exported).toBe(1);
+    expect(summary.skipped).toEqual([{ index: 1, reason: 'missing' }]);
   });
 });
