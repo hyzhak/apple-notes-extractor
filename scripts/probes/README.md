@@ -35,6 +35,7 @@ Purpose: keep tiny, validated snippets for Apple Notes JXA access. Run with `wit
 - `plaintext-vs-body.mjs`: compare `body()` vs `plaintext()` lengths.
 - `determinism-notes.mjs`: read notes twice, compare order/ids (deterministic in our run).
 - `body-cid-scan.mjs`: scan note bodies for `cid:` references (none found in first 200 notes).
+- `note-container.mjs`: prints note count and container chain (folder/account names) for the first note via `container()` calls.
 - Selection probe (inline one-liner): reports selection count/name; use only if leveraging UI selection.
 
 ## Next probes (planned)
