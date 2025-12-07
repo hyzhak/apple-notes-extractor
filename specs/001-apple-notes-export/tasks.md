@@ -48,7 +48,7 @@ Goal: Export all notes in one traversal, writing each note immediately (no doubl
 - [x] T032 Export loop: in `export-runner`, for i in 0..count-1 call read-by-index, write HTML, append index entry; no arrays of notes.
 - [x] T033 Wire CLI to new loop; keep smoke summary; add debug logs for count and per-note.
 - [x] T034 Smoke determinism rerun on same target (force) yields identical outputs; fix any remaining errors.
-- [ ] T035 Cleanup/lint/tests: remove unused helpers, ensure files stay small and readable.
+- [x] T035 Cleanup/lint/tests: remove unused helpers, ensure files stay small and readable.
 
 ---
 

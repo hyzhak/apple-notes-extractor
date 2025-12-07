@@ -31,8 +31,13 @@ export default tseslint.config(
   {
     ignores: [
       'dist/**',
+      'build/**',
       'coverage/**',
       'node_modules/**',
+      'notes/**',
+      '*.tsbuildinfo',
+      '*.log',
+      'tmp/**',
       '.specify/**',
       '.venv/**',
       'artifacts/**',

@@ -5,7 +5,7 @@ import type { NotesReaderOptions } from './notes/types';
 import { logProgress } from './notes/jxa-helpers';
 import { NotesBridgeError } from './notes-bridge';
 import { writeNoteHtml } from '../services/file-writer';
-import type { Note } from '../models/note';
+import type { IndexEntry, Note } from '../models/note';
 
 export interface ExportSummary {
   exported: number;
@@ -29,9 +29,8 @@ export async function exportNotes(
   logProgress('export.start', { target: context.targetDir });
   const total = await getNoteCount(readerOptions);
   logProgress('export.count', { total });
-  const entries = [];
+  const entries: IndexEntry[] = [];
   let first: ExportSummary['firstNote'] = null;
-  let written = 0;
   const skipped: ExportSummary['skipped'] = [];
   for (let i = 0; i < total; i += 1) {
     let note: Note;
@@ -66,8 +65,7 @@ export async function exportNotes(
         htmlPath: entry.htmlPath
       };
     }
-    written += 1;
-    if (typeof readerOptions.limit === 'number' && written >= readerOptions.limit) {
+    if (typeof readerOptions.limit === 'number' && entries.length >= readerOptions.limit) {
       break;
     }
   }

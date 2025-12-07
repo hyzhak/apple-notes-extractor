@@ -13,7 +13,5 @@ export interface RawNoteResult {
 }
 
 export type NotesApp = {
-  includeStandardAdditions: boolean;
-  accounts?: () => unknown;
   notes?: () => unknown;
 };
