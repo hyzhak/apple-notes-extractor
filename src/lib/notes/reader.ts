@@ -41,12 +41,39 @@ export async function readNoteByIndex(
         uuid?: () => unknown;
         name?: () => unknown;
         body?: () => unknown;
+        container?: () => unknown;
         creationDate?: () => unknown;
         modificationDate?: () => unknown;
       }>;
       if (idx < 0 || idx >= notes.length) return null;
       const note = notes[idx];
       if (!note) return null;
+      const safe = <T>(fn: () => T, fallback: T) => {
+        try {
+          return fn();
+        } catch {
+          return fallback;
+        }
+      };
+      const nameOf = (obj: unknown) => {
+        if (!obj || typeof (obj as { name?: () => unknown }).name !== 'function') return null;
+        return safe(() => (obj as { name: () => unknown }).name(), null);
+      };
+      const collectContainerNames = (item: unknown) => {
+        const names: string[] = [];
+        let current: unknown = item && typeof (item as { container?: () => unknown }).container === 'function'
+          ? safe(() => (item as { container: () => unknown }).container(), null)
+          : null;
+        while (current) {
+          const maybeName = nameOf(current);
+          if (typeof maybeName === 'string') names.push(maybeName);
+        current =
+          typeof (current as { container?: () => unknown }).container === 'function'
+            ? safe(() => (current as { container: () => unknown }).container(), null)
+            : null;
+        }
+        return names.reverse().join('/') || 'Notes';
+      };
       return {
         id:
           (typeof note.id === 'function' && note.id()) ||
@@ -54,7 +81,7 @@ export async function readNoteByIndex(
           null,
         name: typeof note.name === 'function' ? note.name() : null,
         bodyHtml: typeof note.body === 'function' ? String(note.body()) : '',
-        folderPath: 'Notes',
+        folderPath: collectContainerNames(note),
         createdAtUtc: typeof note.creationDate === 'function' ? note.creationDate() : null,
         modifiedAtUtc: typeof note.modificationDate === 'function' ? note.modificationDate() : null
       } satisfies RawNoteResult;
