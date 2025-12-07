@@ -1,12 +1,26 @@
 import { Command } from 'commander';
 import { z } from 'zod';
+import { createRequire } from 'node:module';
 import { createExportContext } from '../lib/export-context';
 import { ensureMacOS } from '../lib/notes-bridge';
 import { exportNotes } from '../lib/export-runner';
 
+const require = createRequire(import.meta.url);
+// Keep CLI usable from both compiled dist/ and ts-node/src:
+// - dist/cli.js sits beside dist/package.json        -> ../package.json
+// - src/cli/index.ts sits under src/                 -> ../../package.json
+const cliPath = new URL('.', import.meta.url).pathname;
+const pkgUrl = cliPath.includes('/dist/')
+  ? new URL('../package.json', import.meta.url)
+  : new URL('../../package.json', import.meta.url);
+const version =
+  (require(pkgUrl.pathname) as { version?: string }).version ??
+  'unknown';
+
 const cliSchema = z.object({
   target: z.string().min(1, 'Target directory is required'),
-  force: z.boolean().optional()
+  force: z.boolean().optional(),
+  includeAttachments: z.boolean().optional()
 });
 
 export async function main(argv: string[]): Promise<void> {
@@ -14,10 +28,10 @@ export async function main(argv: string[]): Promise<void> {
   program
     .name('apple-notes-export')
     .description('Apple Notes export CLI (MVP smoke run)')
+    .version(version)
     .requiredOption('-t, --target <dir>', 'Absolute path to target directory')
     .option('-f, --force', 'Allow non-empty target directory', false)
-    .option('--include-attachments', 'Attachments disabled in MVP smoke run', false)
-    .option('--version', 'Show version');
+    .option('--include-attachments', 'Attachments export is not yet implemented', false);
 
   program.exitOverride();
 
@@ -30,10 +44,16 @@ export async function main(argv: string[]): Promise<void> {
     }>();
     const parsed = cliSchema.parse({
       target: options.target,
-      force: Boolean(options.force)
+      force: Boolean(options.force),
+      includeAttachments: Boolean(options.includeAttachments)
     });
 
     ensureMacOS();
+
+    if (parsed.includeAttachments) {
+      // Attachments are deferred; keep UX explicit.
+      process.stderr.write('Warning: --include-attachments is not implemented yet; continuing without attachments.\n');
+    }
 
     const context = await createExportContext({
       targetDir: parsed.target,
