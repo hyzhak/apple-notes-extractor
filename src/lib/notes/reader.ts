@@ -15,8 +15,8 @@ export async function getNoteCount(options: NotesReaderOptions = {}): Promise<nu
     const count = (await runner(() => {
       const Notes = Application('Notes') as NotesApp;
       const raw = typeof Notes.notes === 'function' ? Notes.notes() : [];
-      const len = (raw as { length?: number }).length;
-      return typeof len === 'number' && len >= 0 ? len : 0;
+      const length = (raw as { length?: number }).length;
+      return typeof length === 'number' && length >= 0 ? length : 0;
     })) as number;
     const safeCount = typeof count === 'number' && count >= 0 ? count : 0;
     debugLog('notes.count', { count: safeCount });
@@ -45,45 +45,44 @@ export async function readNoteByIndex(
         creationDate?: () => unknown;
         modificationDate?: () => unknown;
       }>;
-      if (idx < 0 || idx >= notes.length) return null;
+
+      const inRange = idx >= 0 && idx < (notes as { length: number }).length;
+      if (!inRange) return null;
+
       const note = notes[idx];
       if (!note) return null;
-      const safe = <T>(fn: () => T, fallback: T) => {
+
+      const callMethod = <T>(target: unknown, method: string): T | null => {
+        if (!target || typeof (target as Record<string, unknown>)[method] !== 'function') {
+          return null;
+        }
         try {
-          return fn();
+          return (target as { [key: string]: () => T })[method]();
         } catch {
-          return fallback;
+          return null;
         }
       };
-      const nameOf = (obj: unknown) => {
-        if (!obj || typeof (obj as { name?: () => unknown }).name !== 'function') return null;
-        return safe(() => (obj as { name: () => unknown }).name(), null);
-      };
-      const collectContainerNames = (item: unknown) => {
+
+      const containerPath = (): string => {
         const names: string[] = [];
-        let current: unknown = item && typeof (item as { container?: () => unknown }).container === 'function'
-          ? safe(() => (item as { container: () => unknown }).container(), null)
-          : null;
+        let current = callMethod<unknown>(note, 'container');
         while (current) {
-          const maybeName = nameOf(current);
-          if (typeof maybeName === 'string') names.push(maybeName);
-        current =
-          typeof (current as { container?: () => unknown }).container === 'function'
-            ? safe(() => (current as { container: () => unknown }).container(), null)
-            : null;
+          const containerName = callMethod<string>(current, 'name');
+          if (typeof containerName === 'string' && containerName.trim().length > 0) {
+            names.push(containerName);
+          }
+          current = callMethod<unknown>(current, 'container');
         }
-        return names.reverse().join('/') || 'Notes';
+        return names.length ? names.reverse().join('/') : 'Notes';
       };
+
       return {
-        id:
-          (typeof note.id === 'function' && note.id()) ||
-          (typeof note.uuid === 'function' && note.uuid()) ||
-          null,
-        name: typeof note.name === 'function' ? note.name() : null,
-        bodyHtml: typeof note.body === 'function' ? String(note.body()) : '',
-        folderPath: collectContainerNames(note),
-        createdAtUtc: typeof note.creationDate === 'function' ? note.creationDate() : null,
-        modifiedAtUtc: typeof note.modificationDate === 'function' ? note.modificationDate() : null
+        id: callMethod(note, 'id') ?? callMethod(note, 'uuid'),
+        name: callMethod(note, 'name'),
+        bodyHtml: callMethod(note, 'body'),
+        folderPath: containerPath(),
+        createdAtUtc: callMethod(note, 'creationDate'),
+        modifiedAtUtc: callMethod(note, 'modificationDate')
       } satisfies RawNoteResult;
     }, index)) as RawNoteResult | null;
 
