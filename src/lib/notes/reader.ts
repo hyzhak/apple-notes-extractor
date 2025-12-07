@@ -36,7 +36,7 @@ export async function readNoteByIndex(
   try {
     const raw = (await runner((idx: number) => {
       const Notes = Application('Notes') as NotesApp;
-      const notes = (typeof Notes.notes === 'function' ? Notes.notes() : []) as Array<{
+      type JxaNote = {
         id?: () => unknown;
         uuid?: () => unknown;
         name?: () => unknown;
@@ -44,12 +44,13 @@ export async function readNoteByIndex(
         container?: () => unknown;
         creationDate?: () => unknown;
         modificationDate?: () => unknown;
-      }>;
+      };
+      const notes = (typeof Notes.notes === 'function' ? Notes.notes() : []) as JxaNote[];
 
       const inRange = idx >= 0 && idx < (notes as { length: number }).length;
       if (!inRange) return null;
 
-      const note = notes[idx];
+      const note: JxaNote | undefined = notes[idx];
       if (!note) return null;
 
       const callMethod = <T>(target: unknown, method: string): T | null => {
