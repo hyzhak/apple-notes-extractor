@@ -47,7 +47,7 @@ Goal: Export all notes in one traversal, writing each note immediately (no doubl
 - [x] T031 Single-note read by index (JXA): fetch id/name/body/created/modified; folderPath default 'Notes'; unit tests for missing id/body.
 - [x] T032 Export loop: in `export-runner`, for i in 0..count-1 call read-by-index, write HTML, append index entry; no arrays of notes.
 - [x] T033 Wire CLI to new loop; keep smoke summary; add debug logs for count and per-note.
-- [ ] T034 Smoke determinism rerun on same target (force) yields identical outputs; fix any remaining errors.
+- [x] T034 Smoke determinism rerun on same target (force) yields identical outputs; fix any remaining errors.
 - [ ] T035 Cleanup/lint/tests: remove unused helpers, ensure files stay small and readable.
 
 ---
