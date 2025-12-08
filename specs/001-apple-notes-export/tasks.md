@@ -56,9 +56,6 @@ Goal: Export all notes in one traversal, writing each note immediately (no doubl
 
 Goal: Include/exclude folders applied against live Notes; deterministic outputs.
 
-- [ ] T040 Filter schema + parsing for folders in `src/lib/filter-schema.ts`
-- [ ] T041 Apply folder filters in planner/reader flow in `src/lib/filtering.ts`
-- [ ] T042 CLI options/help for folder filters in `src/cli/index.ts`
 - [x] T040 Filter schema + parsing for folders in `src/lib/filter-schema.ts`
 - [x] T041 Apply folder filters in planner/reader flow in `src/lib/filtering.ts`
 - [x] T042 CLI options/help for folder filters in `src/cli/index.ts`
