@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { createExportContext } from '../lib/export-context';
 import { ensureMacOS } from '../lib/notes-bridge';
 import { exportNotes } from '../lib/export-runner';
-import { parseFolderFilters } from '../lib/filter-schema';
+import { parseFolderFilters, parseDateFilters } from '../lib/filter-schema';
 
 const require = createRequire(import.meta.url);
 // Keep CLI usable from both compiled dist/ and ts-node/src:
@@ -23,7 +23,11 @@ const cliSchema = z.object({
   force: z.boolean().optional(),
   includeAttachments: z.boolean().optional(),
   includeFolder: z.array(z.string()).optional(),
-  excludeFolder: z.array(z.string()).optional()
+  excludeFolder: z.array(z.string()).optional(),
+  createdAfter: z.string().optional(),
+  createdBefore: z.string().optional(),
+  modifiedAfter: z.string().optional(),
+  modifiedBefore: z.string().optional()
 });
 
 export async function main(argv: string[]): Promise<void> {
@@ -36,7 +40,11 @@ export async function main(argv: string[]): Promise<void> {
     .option('-f, --force', 'Allow non-empty target directory', false)
     .option('--include-attachments', 'Attachments export is not yet implemented', false)
     .option('--include-folder <paths...>', 'Include only folders (prefix match)', [])
-    .option('--exclude-folder <paths...>', 'Exclude folders (prefix match)', []);
+    .option('--exclude-folder <paths...>', 'Exclude folders (prefix match)', [])
+    .option('--created-after <iso>', 'Only export notes created on/after this UTC date')
+    .option('--created-before <iso>', 'Only export notes created on/before this UTC date')
+    .option('--modified-after <iso>', 'Only export notes modified on/after this UTC date')
+    .option('--modified-before <iso>', 'Only export notes modified on/before this UTC date');
 
   program.exitOverride();
 
@@ -48,13 +56,21 @@ export async function main(argv: string[]): Promise<void> {
       includeAttachments?: boolean;
       includeFolder?: string[];
       excludeFolder?: string[];
+      createdAfter?: string;
+      createdBefore?: string;
+      modifiedAfter?: string;
+      modifiedBefore?: string;
     }>();
     const parsed = cliSchema.parse({
       target: options.target,
       force: Boolean(options.force),
       includeAttachments: Boolean(options.includeAttachments),
       includeFolder: options.includeFolder,
-      excludeFolder: options.excludeFolder
+      excludeFolder: options.excludeFolder,
+      createdAfter: options.createdAfter,
+      createdBefore: options.createdBefore,
+      modifiedAfter: options.modifiedAfter,
+      modifiedBefore: options.modifiedBefore
     });
 
     ensureMacOS();
@@ -75,7 +91,14 @@ export async function main(argv: string[]): Promise<void> {
       excludeFolders: parsed.excludeFolder
     });
 
-    const result = await exportNotes(context, {}, filters);
+    const dateFilters = parseDateFilters({
+      createdAfter: parsed.createdAfter,
+      createdBefore: parsed.createdBefore,
+      modifiedAfter: parsed.modifiedAfter,
+      modifiedBefore: parsed.modifiedBefore
+    });
+
+    const result = await exportNotes(context, {}, { folders: filters, dates: dateFilters });
 
     const summary = {
       status: 'ok',

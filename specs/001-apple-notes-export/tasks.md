@@ -67,10 +67,10 @@ Goal: Include/exclude folders applied against live Notes; deterministic outputs.
 
 Goal: Created/modified date filters applied against live Notes; deterministic outputs.
 
-- [ ] T044 Extend filter schema for date bounds in `src/lib/filter-schema.ts`
-- [ ] T045 Apply date filters in planner/reader flow in `src/lib/filtering.ts`
-- [ ] T046 CLI options/help for date filters in `src/cli/index.ts`
-- [ ] T047 Smoke: run with date bounds against live Notes; verify counts/index reflect filters
+- [x] T044 Extend filter schema for date bounds in `src/lib/filter-schema.ts`
+- [x] T045 Apply date filters in planner/reader flow in `src/lib/filtering.ts`
+- [x] T046 CLI options/help for date filters in `src/cli/index.ts`
+- [x] T047 Smoke: run with date bounds against live Notes; verify counts/index reflect filters
 
 ---
 

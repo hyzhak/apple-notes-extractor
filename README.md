@@ -44,6 +44,18 @@ Notes:
 - Paths are matched by prefix; `Work` matches `Work/Sub/Note`.
 - Attachments flag exists but export is not implemented yet; CLI will warn and proceed without attachments.
 
+## Date filters
+
+Filter by created/modified timestamps (UTC, inclusive bounds):
+
+```bash
+node dist/cli.js \
+  --target /tmp/notes-export \
+  --force \
+  --created-after 2024-01-01T00:00:00Z \
+  --modified-before 2024-12-31T23:59:59Z
+```
+
 ## Development
 
 ```bash
