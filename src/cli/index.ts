@@ -27,7 +27,9 @@ const cliSchema = z.object({
   createdAfter: z.string().optional(),
   createdBefore: z.string().optional(),
   modifiedAfter: z.string().optional(),
-  modifiedBefore: z.string().optional()
+  modifiedBefore: z.string().optional(),
+  quiet: z.boolean().optional(),
+  verbose: z.number().int().nonnegative().optional()
 });
 
 export async function main(argv: string[]): Promise<void> {
@@ -44,7 +46,14 @@ export async function main(argv: string[]): Promise<void> {
     .option('--created-after <iso>', 'Only export notes created on/after this UTC date')
     .option('--created-before <iso>', 'Only export notes created on/before this UTC date')
     .option('--modified-after <iso>', 'Only export notes modified on/after this UTC date')
-    .option('--modified-before <iso>', 'Only export notes modified on/before this UTC date');
+    .option('--modified-before <iso>', 'Only export notes modified on/before this UTC date')
+    .option('-q, --quiet', 'Reduce log noise (progress only)', false)
+    .option(
+      '-v, --verbose',
+      'Increase verbosity (repeat for more detail)',
+      (_value, previous: number) => previous + 1,
+      0
+    );
 
   program.exitOverride();
 
@@ -60,6 +69,8 @@ export async function main(argv: string[]): Promise<void> {
       createdBefore?: string;
       modifiedAfter?: string;
       modifiedBefore?: string;
+      quiet?: boolean;
+      verbose?: number;
     }>();
     const parsed = cliSchema.parse({
       target: options.target,
@@ -70,7 +81,9 @@ export async function main(argv: string[]): Promise<void> {
       createdAfter: options.createdAfter,
       createdBefore: options.createdBefore,
       modifiedAfter: options.modifiedAfter,
-      modifiedBefore: options.modifiedBefore
+      modifiedBefore: options.modifiedBefore,
+      quiet: Boolean(options.quiet),
+      verbose: options.verbose
     });
 
     ensureMacOS();
@@ -98,7 +111,14 @@ export async function main(argv: string[]): Promise<void> {
       modifiedBefore: parsed.modifiedBefore
     });
 
-    const result = await exportNotes(context, {}, { folders: filters, dates: dateFilters });
+    const logLevel = parsed.quiet ? 0 : Math.min(2, (parsed.verbose ?? 0) + 1);
+
+    const result = await exportNotes(
+      context,
+      {},
+      { folders: filters, dates: dateFilters },
+      { logLevel }
+    );
 
     const summary = {
       status: 'ok',

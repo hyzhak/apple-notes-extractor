@@ -76,8 +76,8 @@ Goal: Created/modified date filters applied against live Notes; deterministic ou
 
 ## Phase 7 — Logging & Progress (only when visible in smoke)
 
-- [ ] T060 Structured logging/progress reporter in `src/lib/progress-reporter.ts`
-- [ ] T061 Surface progress in CLI output (rate-limited) and keep smoke green
+- [x] T060 Structured logging/progress reporter in `src/lib/progress-reporter.ts`
+- [x] T061 Surface progress in CLI output (rate-limited) and keep smoke green
 
 ---
 
