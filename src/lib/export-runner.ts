@@ -6,6 +6,8 @@ import { logProgress } from './notes/jxa-helpers';
 import { NotesBridgeError } from './notes-bridge';
 import { writeNoteHtml } from '../services/file-writer';
 import type { IndexEntry, Note } from '../models/note';
+import type { FolderFilters } from './filter-schema';
+import { shouldExportFolder } from './filtering';
 
 export interface ExportSummary {
   exported: number;
@@ -24,7 +26,8 @@ export interface ExportSummary {
 
 export async function exportNotes(
   context: ExportContext,
-  readerOptions: NotesReaderOptions = {}
+  readerOptions: NotesReaderOptions = {},
+  folderFilters: FolderFilters = {}
 ): Promise<ExportSummary> {
   logProgress('export.start', { target: context.targetDir });
   const total = await getNoteCount(readerOptions);
@@ -45,6 +48,12 @@ export async function exportNotes(
       }
       throw error;
     }
+    if (!shouldExportFolder(note.folderPath, folderFilters)) {
+      logProgress('export.skip', { idx: i + 1, reason: 'filtered', folder: note.folderPath });
+      skipped.push({ index: i, reason: `Filtered by folder: ${note.folderPath}` });
+      continue;
+    }
+
     logProgress('export.note', { idx: i + 1, id: note.id });
     const result = await writeNoteHtml(note, context.notesPath);
     const entry = {

@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { createExportContext } from '../lib/export-context';
 import { ensureMacOS } from '../lib/notes-bridge';
 import { exportNotes } from '../lib/export-runner';
+import { parseFolderFilters } from '../lib/filter-schema';
 
 const require = createRequire(import.meta.url);
 // Keep CLI usable from both compiled dist/ and ts-node/src:
@@ -20,7 +21,9 @@ const version =
 const cliSchema = z.object({
   target: z.string().min(1, 'Target directory is required'),
   force: z.boolean().optional(),
-  includeAttachments: z.boolean().optional()
+  includeAttachments: z.boolean().optional(),
+  includeFolder: z.array(z.string()).optional(),
+  excludeFolder: z.array(z.string()).optional()
 });
 
 export async function main(argv: string[]): Promise<void> {
@@ -31,7 +34,9 @@ export async function main(argv: string[]): Promise<void> {
     .version(version)
     .requiredOption('-t, --target <dir>', 'Absolute path to target directory')
     .option('-f, --force', 'Allow non-empty target directory', false)
-    .option('--include-attachments', 'Attachments export is not yet implemented', false);
+    .option('--include-attachments', 'Attachments export is not yet implemented', false)
+    .option('--include-folder <paths...>', 'Include only folders (prefix match)', [])
+    .option('--exclude-folder <paths...>', 'Exclude folders (prefix match)', []);
 
   program.exitOverride();
 
@@ -41,11 +46,15 @@ export async function main(argv: string[]): Promise<void> {
       target: string;
       force?: boolean;
       includeAttachments?: boolean;
+      includeFolder?: string[];
+      excludeFolder?: string[];
     }>();
     const parsed = cliSchema.parse({
       target: options.target,
       force: Boolean(options.force),
-      includeAttachments: Boolean(options.includeAttachments)
+      includeAttachments: Boolean(options.includeAttachments),
+      includeFolder: options.includeFolder,
+      excludeFolder: options.excludeFolder
     });
 
     ensureMacOS();
@@ -61,7 +70,12 @@ export async function main(argv: string[]): Promise<void> {
       includeAttachments: false
     });
 
-    const result = await exportNotes(context);
+    const filters = parseFolderFilters({
+      includeFolders: parsed.includeFolder,
+      excludeFolders: parsed.excludeFolder
+    });
+
+    const result = await exportNotes(context, {}, filters);
 
     const summary = {
       status: 'ok',
