@@ -83,7 +83,7 @@ Goal: Created/modified date filters applied against live Notes; deterministic ou
 
 ## Phase 8 — Polish & Docs
 
-- [ ] T070 Refresh README.md and `specs/001-apple-notes-export/quickstart.md` with real-notes examples
+- [x] T070 Refresh README.md and `specs/001-apple-notes-export/quickstart.md` with real-notes examples
 - [ ] T071 Determinism soak (long-run) against live library
 - [ ] T072 CI/publish workflow in `.github/workflows/ci.yml`
 
