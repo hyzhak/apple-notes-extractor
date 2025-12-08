@@ -44,6 +44,12 @@ Notes:
 - Paths are matched by prefix; `Work` matches `Work/Sub/Note`.
 - Attachments flag exists but export is not implemented yet; CLI will warn and proceed without attachments.
 
+## Verbosity
+
+- Default: info (progress + per-note/skip lines).
+- Quiet: `--quiet` or `-q` (progress only).
+- Verbose: `-v` adds extra detail; `-vv` enables debug (also set by `NOTES_DEBUG=1`).
+
 ## Date filters
 
 Filter by created/modified timestamps (UTC, inclusive bounds):
