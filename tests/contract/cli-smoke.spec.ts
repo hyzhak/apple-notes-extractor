@@ -66,7 +66,7 @@ describe('cli smoke path', () => {
 
     const targetDir = await fs.mkdtemp(path.join(os.tmpdir(), 'notes-cli-'));
     try {
-      await main(['node', 'cli', '--target', targetDir, '--force']);
+      await main(['node', 'cli', '--target', targetDir, '--force', '-vv']);
 
       const indexJson = await fs.readFile(path.join(targetDir, 'index.json'), 'utf8');
       const parsed = JSON.parse(indexJson) as any[];
@@ -84,6 +84,12 @@ describe('cli smoke path', () => {
       ]);
       expect(ensureMacOS).toHaveBeenCalledTimes(1);
       expect(exportNotes).toHaveBeenCalledTimes(1);
+      expect(exportNotes).toHaveBeenCalledWith(
+        expect.anything(),
+        {},
+        expect.anything(),
+        expect.objectContaining({ logLevel: 2 })
+      );
       expect(process.exitCode).toBe(0);
       expect(stdoutSpy).toHaveBeenCalled();
     } finally {

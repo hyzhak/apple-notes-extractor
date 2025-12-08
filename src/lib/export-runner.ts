@@ -2,12 +2,13 @@ import fs from 'node:fs/promises';
 import type { ExportContext } from './export-context';
 import { getNoteCount, readNoteByIndex } from './notes/reader';
 import type { NotesReaderOptions } from './notes/types';
-import { logProgress } from './notes/jxa-helpers';
+import { LogLevel, logProgress, setLogLevel } from './notes/jxa-helpers';
 import { NotesBridgeError } from './notes-bridge';
 import { writeNoteHtml } from '../services/file-writer';
 import type { IndexEntry, Note } from '../models/note';
 import type { DateFilters, FolderFilters } from './filter-schema';
 import { filterNote } from './filtering';
+import { createProgressReporter } from './progress-reporter';
 
 export interface ExportSummary {
   exported: number;
@@ -27,9 +28,14 @@ export interface ExportSummary {
 export async function exportNotes(
   context: ExportContext,
   readerOptions: NotesReaderOptions = {},
-  filters: { folders?: FolderFilters; dates?: DateFilters } = {}
+  filters: { folders?: FolderFilters; dates?: DateFilters } = {},
+  options: { logLevel?: LogLevel } = {}
 ): Promise<ExportSummary> {
+  if (options.logLevel !== undefined) {
+    setLogLevel(options.logLevel);
+  }
   logProgress('export.start', { target: context.targetDir });
+  const reporter = createProgressReporter();
   const total = await getNoteCount(readerOptions);
   logProgress('export.count', { total });
   const entries: IndexEntry[] = [];
@@ -78,6 +84,12 @@ export async function exportNotes(
     if (typeof readerOptions.limit === 'number' && entries.length >= readerOptions.limit) {
       break;
     }
+    reporter.emit('export.progress', {
+      processed: entries.length + skipped.length,
+      exported: entries.length,
+      skipped: skipped.length,
+      total
+    });
   }
 
   logProgress('export.written', { count: entries.length });
