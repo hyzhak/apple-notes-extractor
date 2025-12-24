@@ -1,20 +1,59 @@
 # apple-notes-extractor
 
+![Apple Notes Exporter](assets/title-image.png)
+
 Apple Notes Extractor CLI (macOS + Apple Notes via JXA)
+
+## Requirements
+
+- macOS (Apple Notes access via JXA / AppleScript)
+- Node.js >= 24
+
+## Installation
+
+- Global (installs CLI name `apple-notes-export`):
+
+```bash
+npm install -g @hyzhak/apple-notes-export
+```
+
+- Run without installing (npx — fetches published package and runs it):
+
+```bash
+npx @hyzhak/apple-notes-export --help
+```
 
 ## Quick use
 
+Export all notes to an absolute target directory.
+
+- If you installed the package globally:
+
 ```bash
-# Export all notes to an absolute target directory
-node dist/cli.js --target /tmp/notes-export --force
+apple-notes-export --target /tmp/notes-export --force
+```
+
+- Using npx (no install):
+
+```bash
+npx @hyzhak/apple-notes-export --target /tmp/notes-export --force
 ```
 
 ## Folder filters
 
-Keep only specific folders (prefix match, case-insensitive):
+Keep only specific folders (prefix match, case-insensitive). Example using the installed CLI:
 
 ```bash
-node dist/cli.js \
+apple-notes-export \
+  --target /tmp/notes-export \
+  --force \
+  --include-folder "Work/Projects" "Personal"
+```
+
+Or with npx:
+
+```bash
+npx @hyzhak/apple-notes-export \
   --target /tmp/notes-export \
   --force \
   --include-folder "Work/Projects" "Personal"
@@ -23,7 +62,7 @@ node dist/cli.js \
 Exclude folders:
 
 ```bash
-node dist/cli.js \
+apple-notes-export \
   --target /tmp/notes-export \
   --force \
   --exclude-folder "Archive" "Trash"
@@ -32,7 +71,7 @@ node dist/cli.js \
 Include and exclude together (include evaluated first, then exclude):
 
 ```bash
-node dist/cli.js \
+apple-notes-export \
   --target /tmp/notes-export \
   --force \
   --include-folder "Work" \
@@ -55,7 +94,17 @@ Notes:
 Filter by created/modified timestamps (UTC, inclusive bounds):
 
 ```bash
-node dist/cli.js \
+apple-notes-export \
+  --target /tmp/notes-export \
+  --force \
+  --created-after 2024-01-01T00:00:00Z \
+  --modified-before 2024-12-31T23:59:59Z
+```
+
+Or with npx:
+
+```bash
+npx @hyzhak/apple-notes-export \
   --target /tmp/notes-export \
   --force \
   --created-after 2024-01-01T00:00:00Z \
@@ -64,9 +113,16 @@ node dist/cli.js \
 
 ## Development
 
+For working on the project locally (developer workflow):
+
 ```bash
 npm install
 npm run lint
 npm test
 npm run build
 ```
+
+Notes on validating README examples:
+- Use `npx @hyzhak/apple-notes-export --help` to confirm the published CLI's help text matches these examples.
+- To validate an actual export (will contact npm and run on macOS), run:
+  - `npx @hyzhak/apple-notes-export --target /tmp/test-export --force`
