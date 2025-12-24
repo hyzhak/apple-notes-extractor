@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, CommanderError } from 'commander';
 import { z } from 'zod';
 import { createRequire } from 'node:module';
 import { createExportContext } from '../lib/export-context';
@@ -34,6 +34,7 @@ const cliSchema = z.object({
 
 export async function main(argv: string[]): Promise<void> {
   const program = new Command();
+  let shouldExit = false;
   program
     .name('apple-notes-export')
     .description('Apple Notes export CLI (MVP smoke run)')
@@ -55,10 +56,20 @@ export async function main(argv: string[]): Promise<void> {
       0
     );
 
-  program.exitOverride();
+  program.exitOverride((err) => {
+    if (err instanceof CommanderError && err.exitCode === 0) {
+      shouldExit = true;
+      return;
+    }
+    throw err;
+  });
 
   try {
     program.parse(argv);
+    if (shouldExit) {
+      process.exitCode = 0;
+      return;
+    }
     const options = program.opts<{
       target: string;
       force?: boolean;
@@ -139,8 +150,4 @@ export async function main(argv: string[]): Promise<void> {
     process.stderr.write(`Error: ${(maybeCommanderError as Error).message}\n`);
     process.exitCode = 1;
   }
-}
-
-if (import.meta.url === `file://${process.argv[1]}`) {
-  void main(process.argv);
 }
