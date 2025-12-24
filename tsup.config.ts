@@ -14,7 +14,7 @@ const common = {
 export default defineConfig([
   {
     ...common,
-    entry: { cli: 'src/cli/index.ts' },
+    entry: { cli: 'src/cli/entry.ts' },
     dts: false,
     clean: true,
     banner: {
